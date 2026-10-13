@@ -1,0 +1,7 @@
+amr_core:
+  ros__parameters:
+    laser:
+      main_laser:
+        frame_id: "ld250_laser_frame"
+      low_laser:
+        enabled: false

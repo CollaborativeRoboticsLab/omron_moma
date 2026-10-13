@@ -32,7 +32,7 @@ def get_moveit_config():
         )
         .robot_description_semantic(
             file_path=os.path.join(
-                get_package_share_directory('moma_ros'),
+                get_package_share_directory('ld250_tm12x_moveit_config'),
                 'config',
                 'ld250_tm12x.srdf',
             )

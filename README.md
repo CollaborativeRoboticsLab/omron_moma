@@ -72,6 +72,25 @@ The top-level launch entry point is `ros2 launch moma_ros ld250_tm12x.launch.py`
 | `use_moveit` | `true` | Starts MoveIt for the arm. This is only effective when `use_arm:=true`. |
 | `use_nav2` | `true` | Starts Nav2 for the mobile base. This is only effective when `use_base:=true`. |
 
+## MoveIt Configuration
+
+The combined MoveIt package for the mobile manipulators lives in `moma_moveit_config/`.
+
+The combined package owns only the combined-model-specific assets:
+
+- combined URDF wrapper
+- combined SRDF
+- combined launch files
+
+The TM arm tuning remains in the upstream `tmXXX_moveit_config` packages and is reused by the combined package:
+
+- kinematics
+- joint limits
+- controllers
+- OMPL, CHOMP, and Pilz planner settings
+
+When updating the mounted robot model, keep the arm-specific tuning in `tmXXX_moveit_config` as the source of truth and only change the combined package where the mobile base integration actually differs.
+
 ## Usage
 
 ### Start the full system headless
