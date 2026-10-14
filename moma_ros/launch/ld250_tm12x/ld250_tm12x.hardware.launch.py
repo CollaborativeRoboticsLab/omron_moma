@@ -8,6 +8,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
+
+AMR_PARAMS_OVERRIDE = os.path.join(
+    get_package_share_directory('moma_ros'),
+    'config',
+    'ld250_tm12x_amr.yaml',
+)
+
 def load_file(package_name, file_path):
     package_path = get_package_share_directory(package_name)
     absolute_file_path = os.path.join(package_path, file_path)
@@ -56,7 +63,8 @@ def _create_hardware_actions(context, tm_robot_ip, tm_use_simulation, robot_desc
                 ),
                 launch_arguments={
                     'robot_description_override': robot_description_override,
-                    'rviz' : 'false',  # RViz is launched in the top-level launch file, so disable it here
+                    'extra_params_file': AMR_PARAMS_OVERRIDE,
+                    'rviz': 'false',
                 }.items(),
             )
         )

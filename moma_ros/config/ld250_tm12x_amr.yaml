@@ -1,0 +1,5 @@
+amr_core:
+  ros__parameters:
+    laser:
+      low_laser:
+        enabled: false
