@@ -9,7 +9,16 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>moveit_configs_utils</exec_depend>
+  <exec_depend>amr_ros</exec_depend>
+  <exec_depend>amr_teleop</exec_depend>
+  <exec_depend>ld250_tm12x_moveit_config</exec_depend>
+  <exec_depend>moma_description</exec_depend>
+  <exec_depend>moveit_ros_move_group</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tm12x_moveit_config</exec_depend>
+  <exec_depend>tm_driver</exec_depend>
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
