@@ -64,8 +64,12 @@ def _create_hardware_actions(context, tm_robot_ip, tm_use_simulation, robot_desc
                 launch_arguments={
                     'robot_description_override': robot_description_override,
                     'extra_params_file': AMR_PARAMS_OVERRIDE,
+<<<<<<< HEAD
                     'use_rviz': 'false',
                     'use_nav2': 'false',
+=======
+                    'rviz': 'false',
+>>>>>>> d0c80cf2518e8f645f77f03dc34282c44152f5ac
                 }.items(),
             )
         )
