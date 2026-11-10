@@ -1,5 +1,8 @@
 import os
+import sys
 import yaml
+import json
+import xacro
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition, UnlessCondition
@@ -7,55 +10,27 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from ament_index_python.packages import get_package_share_directory
-from moveit_configs_utils import MoveItConfigsBuilder
+
+def load_file(package_name, file_path):
+    package_path = get_package_share_directory(package_name)
+    absolute_file_path = os.path.join(package_path, file_path)
+
+    try:
+        with open(absolute_file_path, 'r') as file:
+            return file.read()
+    except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
+        return None
 
 
 def load_yaml(package_name, file_path):
-    absolute_file_path = os.path.join(get_package_share_directory(package_name), file_path)
+    package_path = get_package_share_directory(package_name)
+    absolute_file_path = os.path.join(package_path, file_path)
 
     try:
         with open(absolute_file_path, 'r') as file:
             return yaml.safe_load(file)
-    except OSError:
+    except OSError:  # parent of IOError, OSError *and* WindowsError where available
         return None
-
-
-def get_moveit_config():
-    moveit_config = (
-        MoveItConfigsBuilder('ld250_tm12x', package_name='tm12x_moveit_config')
-        .robot_description(
-            file_path=os.path.join(
-                get_package_share_directory('moma_description'),
-                'xacro',
-                'ld250_tm12x.urdf.xacro',
-            )
-        )
-        .robot_description_semantic(
-            file_path=os.path.join(
-                get_package_share_directory('moma_ros'),
-                'config',
-                'ld250_tm12x.srdf',
-            )
-        )
-        .trajectory_execution(
-            file_path=os.path.join(
-                get_package_share_directory('tm12x_moveit_config'),
-                'config',
-                'moveit2_controllers.yaml',
-            )
-        )
-        .joint_limits(
-            file_path=os.path.join(
-                get_package_share_directory('tm12x_moveit_config'),
-                'config',
-                'joint_limits.yaml',
-            )
-        )
-        .planning_pipelines(default_planning_pipeline='ompl', pipelines=['ompl'])
-        .to_moveit_configs()
-    )
-    moveit_config.planning_pipelines['ompl'] = load_yaml('tm12x_moveit_config', 'config/ompl_planning.yaml')
-    return moveit_config
 
 def generate_launch_description():
     use_moveit = LaunchConfiguration('use_moveit')
@@ -65,11 +40,40 @@ def generate_launch_description():
         default_value='true',
         description='Whether to start RViz with the MoveIt configuration'
     )
-    moveit_config = get_moveit_config()
+
+    # Configure robot_description
+    robot_description_config = xacro.process_file(
+        os.path.join(
+            get_package_share_directory('moma_description'),
+            'xacro',
+            'ld250_tm12x.urdf.xacro',
+        )
+    )
+    robot_description = {'robot_description': robot_description_config.toxml()}
+
+    # SRDF Configuration
+    robot_description_semantic_config = load_file('ld250_tm12x_moveit_config', 'config/ld250_tm12x.srdf')
+    robot_description_semantic = {'robot_description_semantic': robot_description_semantic_config}
+
+    # Planning Configuration
+    ompl_planning_pipeline_config = {
+        'planning_pipelines': ['ompl'],
+        'default_planning_pipeline': 'ompl',
+        'ompl': load_yaml('tm12x_moveit_config', 'config/ompl_planning.yaml'),
+    }
+
+    # Kinematics
+    kinematics_yaml = load_yaml('tm12x_moveit_config'  , 'config/kinematics.yaml')
+    robot_description_kinematics = {'robot_description_kinematics': kinematics_yaml}
 
     # RViz configurations
     moveit_rviz_config = PathJoinSubstitution([FindPackageShare('moma_ros'), 'rviz', 'ld250_tm12x-moveit.rviz'])
     nav2_rviz_cfg = PathJoinSubstitution([FindPackageShare('moma_ros'), 'rviz', 'ld250_tm12x-nav2.rviz'])
+
+    # Joint limits
+    joint_limits = load_yaml('tm12x_moveit_config', 'config/joint_limits.yaml')
+    joint_limits.update(load_yaml('tm12x_moveit_config', 'config/pilz_cartesian_limits.yaml'))
+    joint_limits_yaml = {'robot_description_planning': joint_limits}
 
     # RViz
     moveit_rviz_node = Node(
@@ -81,11 +85,11 @@ def generate_launch_description():
         arguments=['-d', moveit_rviz_config],
         condition=IfCondition(use_moveit),
         parameters=[
-            moveit_config.robot_description,
-            moveit_config.robot_description_semantic,
-            moveit_config.planning_pipelines,
-            moveit_config.robot_description_kinematics,
-            moveit_config.joint_limits,
+            robot_description,
+            robot_description_semantic,
+            ompl_planning_pipeline_config,
+            robot_description_kinematics,
+            joint_limits_yaml,
         ],
     )
 

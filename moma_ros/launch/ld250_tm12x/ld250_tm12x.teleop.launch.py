@@ -40,7 +40,8 @@ def generate_launch_description():
     include_teleop = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(amr_teleop_share, 'launch', 'amr_joyop.launch.py')
-        )
+        ),
+        launch_arguments={'joy_vel': 'cmd_vel'}.items(),
     )
 
     return LaunchDescription([

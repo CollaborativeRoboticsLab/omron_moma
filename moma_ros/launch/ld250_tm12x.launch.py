@@ -1,63 +1,16 @@
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
-
-
-def _is_enabled(context, name):
-    return LaunchConfiguration(name).perform(context).lower() == 'true'
-
-
-def _create_optional_launches(context, moma_ros_share):
-    actions = []
-
-    use_arm_enabled = _is_enabled(context, 'use_arm')
-    use_base_enabled = _is_enabled(context, 'use_base')
-    use_moveit_enabled = _is_enabled(context, 'use_moveit')
-    use_nav2_enabled = _is_enabled(context, 'use_nav2')
-    use_rviz_enabled = _is_enabled(context, 'use_rviz')
-
-    if use_arm_enabled and use_moveit_enabled:
-        actions.append(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(moma_ros_share, 'launch', 'ld250_tm12x', 'ld250_tm12x.moveit.launch.py')
-                )
-            )
-        )
-
-    if use_base_enabled and use_nav2_enabled:
-        actions.append(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(moma_ros_share, 'launch', 'ld250_tm12x', 'ld250_tm12x.nav2.launch.py')
-                )
-            )
-        )
-
-    if use_rviz_enabled:
-        actions.append(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(moma_ros_share, 'launch', 'ld250_tm12x', 'ld250_tm12x.rviz.launch.py')
-                ),
-                launch_arguments={
-                    'use_moveit': 'true' if use_arm_enabled and use_moveit_enabled else 'false',
-                }.items(),
-            )
-        )
-
-    return actions
 
 
 def generate_launch_description():
     # Top-level launch args
     tm_use_simulation = LaunchConfiguration('tm_use_simulation')
     tm_robot_ip = LaunchConfiguration('tm_robot_ip')
-    use_arm = LaunchConfiguration('use_arm')
-    use_base = LaunchConfiguration('use_base')
     use_rviz = LaunchConfiguration('use_rviz')
     use_moveit = LaunchConfiguration('use_moveit')
     use_nav2 = LaunchConfiguration('use_nav2')
@@ -74,23 +27,11 @@ def generate_launch_description():
         description='Target robot IP address'
     )
 
-    declare_use_arm = DeclareLaunchArgument(
-        'use_arm',
-        default_value='true',
-        description='Whether to start the TM arm hardware stack (true/false)'
-    )
-
-    declare_use_base = DeclareLaunchArgument(
-        'use_base',
-        default_value='true',
-        description='Whether to start the AMR base hardware stack (true/false)'
-    )
-
 
     declare_use_rviz = DeclareLaunchArgument(
         'use_rviz',
-        default_value='false',
-        description='Whether to start RViz (true/false)'
+        default_value='auto',
+        description='Whether to start RViz (true/false/auto). auto starts RViz when MoveIt is enabled.'
     )
 
     declare_use_moveit = DeclareLaunchArgument(
@@ -115,19 +56,46 @@ def generate_launch_description():
         launch_arguments={
             'tm_use_simulation': tm_use_simulation,
             'tm_robot_ip': tm_robot_ip,
-            'use_arm': use_arm,
-            'use_base': use_base,
         }.items(),
+    )
+
+    include_moveit = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(moma_ros_share, 'launch', 'ld250_tm12x', 'ld250_tm12x.moveit.launch.py')
+        ),
+        condition=IfCondition(use_moveit)
+    )
+
+    include_nav2 = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(moma_ros_share, 'launch', 'ld250_tm12x', 'ld250_tm12x.nav2.launch.py')
+        ),
+        condition=IfCondition(use_nav2)
+    )
+
+    include_rviz = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(moma_ros_share, 'launch', 'ld250_tm12x', 'ld250_tm12x.rviz.launch.py')
+        ),
+        launch_arguments={
+            'use_moveit': use_moveit,
+        }.items(),
+        condition=IfCondition(
+            PythonExpression([
+                '"', use_rviz, '" == "true" or '
+                '("', use_rviz, '" == "auto" and "', use_moveit, '" == "true")'
+            ])
+        )
     )
 
     return LaunchDescription([
         declare_tm_use_simulation,
         declare_tm_robot_ip,
-        declare_use_arm,
-        declare_use_base,
         declare_use_rviz,
         declare_use_moveit,
         declare_use_nav2,
         include_hardware,
-        OpaqueFunction(function=lambda context: _create_optional_launches(context, moma_ros_share))
+        include_moveit,
+        include_nav2,
+        include_rviz
     ])

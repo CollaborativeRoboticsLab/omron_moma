@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ld250_tm12x">
+
+  <!-- Arguments -->
+  <xacro:arg name="ns" default=""/>
+  <xacro:arg name="arm_prefix" default=""/>
+  <xacro:arg name="base_prefix" default=""/>
+  <xacro:arg name="arm_color" default="none"/>
+  <xacro:arg name="trans_hw_iface" default="hardware_interface/PositionJointInterface"/>
+  <xacro:arg name="arm_base_link" default="base_link"/>
+  <xacro:arg name="controlbox_mesh_pkg" default="moma_description"/>
+
+  <xacro:macro name="ld250_tm12x_robot" params="ns:='' arm_prefix:='' base_prefix:='' arm_color:='none' trans_hw_iface:='hardware_interface/PositionJointInterface' arm_base_link:='base_link' controlbox_mesh_pkg:='moma_description'">
+
+  <!-- =============================================================== -->
+  <!--                   LD250 related configuration                   -->
+  <!-- =============================================================== -->
+
+  <!-- Includes -->
+  <xacro:include filename="$(find amr_description)/xacro/ld250.urdf.xacro"/>
+  <xacro:include filename="$(find moma_description)/xacro/controlbox_ld250.urdf.xacro"/>
+
+  <xacro:property name="effective_base_prefix" value="${base_prefix if base_prefix != '' else 'ld250_'}"/>
+
+  <!-- LD250 mobile base -->
+  <xacro:ld250 prefix="${effective_base_prefix}" mesh_pkg="amr_description"/>
+
+  <xacro:if value="${base_prefix == ''}">
+    <link name="${arm_base_link}"/>
+    <joint name="${arm_base_link}_to_ld250_base_link" type="fixed">
+      <parent link="${arm_base_link}"/>
+      <child link="${effective_base_prefix}base_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+  </xacro:if>
+
+  <!-- =============================================================== -->
+  <!--                   TM12x related configuration                   -->
+  <!-- =============================================================== -->
+
+  <!-- TM12x macro set -->
+  <xacro:include filename="$(find tm_description)/xacro/macro.gazebo.xacro" />
+  <xacro:include filename="$(find tm_description)/xacro/macro.transmission.xacro" />
+  <xacro:include filename="$(find tm_description)/xacro/macro.tm12x-nominal.urdf.xacro" />
+
+  <xacro:property name="arm_color_val" value="${arm_color}"/>
+  <xacro:property name="tm_effective_arm_color" value="${
+    'moma_tm_none' if arm_color_val == 'none' else
+    'moma_tm_lightgrey' if arm_color_val == 'lightgrey' else
+    'moma_tm_grey' if arm_color_val == 'grey' else
+    'moma_tm_white' if arm_color_val == 'white' else
+    'moma_tm_red' if arm_color_val == 'red' else
+    'moma_tm_orange' if arm_color_val == 'orange' else
+    'moma_tm_yellow' if arm_color_val == 'yellow' else
+    'moma_tm_green' if arm_color_val == 'green' else
+    'moma_tm_blue' if arm_color_val == 'blue' else
+    'moma_tm_indigo' if arm_color_val == 'indigo' else
+    'moma_tm_violet' if arm_color_val == 'violet' else
+    'moma_tm_black' if arm_color_val == 'black' else
+    'moma_tm_darkolive' if arm_color_val == 'darkolive' else
+    arm_color_val
+  }"/>
+
+  <material name="moma_tm_none">
+    <color rgba="0.0 0.0 0.0 1.0" />
+  </material>
+  <material name="moma_tm_lightgrey">
+    <color rgba="0.5 0.5 0.5 1.0" />
+  </material>
+  <material name="moma_tm_grey">
+    <color rgba="0.75 0.75 0.75 1.0" />
+  </material>
+  <material name="moma_tm_white">
+    <color rgba="0.95 0.95 0.95 1.0" />
+  </material>
+  <material name="moma_tm_red">
+    <color rgba="0.95 0.0 0.0 1.0" />
+  </material>
+  <material name="moma_tm_orange">
+    <color rgba="1.0 0.5 0.0 1.0" />
+  </material>
+  <material name="moma_tm_yellow">
+    <color rgba="1.0 1.0 0.0 1.0" />
+  </material>
+  <material name="moma_tm_green">
+    <color rgba="0.0 1.0 0.0 1.0" />
+  </material>
+  <material name="moma_tm_blue">
+    <color rgba="0.0 0.0 1.0 1.0" />
+  </material>
+  <material name="moma_tm_indigo">
+    <color rgba="0.3 0.3 0.6 1.0" />
+  </material>
+  <material name="moma_tm_violet">
+    <color rgba="0.6 0.0 1.0 1.0" />
+  </material>
+  <material name="moma_tm_black">
+    <color rgba="0.0 0.0 0.0 1.0" />
+  </material>
+  <material name="moma_tm_darkolive">
+    <color rgba="0.3 0.3 0.25 1.0" />
+  </material>
+
+  <!-- TM12x arm (gazebo/transmission/material macros) -->
+  <xacro:tmr_gazebo ns="${ns}" prefix="${arm_prefix}" />
+  <xacro:tmr_transmission prefix="${arm_prefix}" hw_iface="${trans_hw_iface}" />
+
+  <!-- TM12x geometry -->
+  <xacro:if value="${arm_color_val == 'none'}">
+    <xacro:tm12x ns="${ns}" prefix="${arm_prefix}" color="${tm_effective_arm_color}"/>
+  </xacro:if>
+  <xacro:unless value="${arm_color_val == 'none'}">
+    <xacro:tm12x ns="${ns}" prefix="${arm_prefix}" color="${tm_effective_arm_color}" format="stl"/>
+  </xacro:unless>
+
+  <!-- =============================================================== -->
+  <!--             TM12x Control box related configuration             -->
+  <!-- =============================================================== -->
+
+  <xacro:controlbox_ld250 mesh_pkg="${controlbox_mesh_pkg}" link_name="controlbox"/>
+
+  <!-- =============================================================== -->
+  <!--                Joint Connection configuration                   -->
+  <!-- =============================================================== -->
+
+  <joint name="ld250_to_controlbox" type="fixed">
+    <parent link="${effective_base_prefix}base_link"/>
+    <child link="controlbox"/>
+    <origin xyz="0 0 0.38" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="controlbox_to_tm12x_mount" type="fixed">
+    <parent link="controlbox"/>
+    <child link="${arm_prefix}base"/>
+    <origin xyz="0.2 0 0.325" rpy="0 0 0"/>
+  </joint>
+
+  </xacro:macro>
+</robot>

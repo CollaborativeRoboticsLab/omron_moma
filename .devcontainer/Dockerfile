@@ -7,9 +7,6 @@ ARG USERNAME=ubuntu
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
-
 RUN apt-get update && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
@@ -33,6 +30,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     ros-${ROS_DISTRO}-joint-state-publisher-gui \
     ros-${ROS_DISTRO}-vision-opencv \
     ros-${ROS_DISTRO}-teleop-twist-joy \
+    ros-${ROS_DISTRO}-teleop-twist-keyboard \
     ros-${ROS_DISTRO}-joy \
     ros-${ROS_DISTRO}-rqt-tf-tree \
     && rm -rf /var/lib/apt/lists/*
@@ -53,13 +51,10 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 WORKDIR /home/$USERNAME/colcon_ws/src 
 
 RUN git clone https://github.com/CollaborativeRoboticsLab/tmr_ros2.git -b develop
-RUN git clone --recurse-submodules  https://github.com/CollaborativeRoboticsLab/omron_amr.git -b develop
+RUN git clone --recurse-submodules https://github.com/CollaborativeRoboticsLab/omron_amr.git -b develop
 RUN git clone https://github.com/CollaborativeRoboticsLab/omron_gripper.git -b develop
 
 # Install python packages
-
-RUN python -m pip config set global.break-system-packages true
-
-RUN pip3 install --no-cache-dir pymodbus
+RUN pip3 install --no-cache-dir --break-system-packages pymodbus
 
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
