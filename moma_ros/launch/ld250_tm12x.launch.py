@@ -1,6 +1,6 @@
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -94,7 +94,7 @@ def generate_launch_description():
         declare_use_rviz,
         declare_use_moveit,
         declare_use_nav2,
-        include_hardware,
+        GroupAction(actions=[include_hardware], scoped=True),
         include_moveit,
         include_nav2,
         include_rviz

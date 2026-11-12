@@ -296,10 +296,7 @@ smoother_server:
 
 behavior_server:
   ros__parameters:
-<<<<<<< HEAD
     enable_stamped_cmd_vel: false
-=======
->>>>>>> d0c80cf2518e8f645f77f03dc34282c44152f5ac
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
@@ -313,11 +310,7 @@ behavior_server:
     wait:
       plugin: "nav2_behaviors/Wait"
     assisted_teleop:
-<<<<<<< HEAD
       plugin: "nav2_behaviors::AssistedTeleop"
-=======
-      plugin: "nav2_behaviors/AssistedTeleop"
->>>>>>> d0c80cf2518e8f645f77f03dc34282c44152f5ac
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.4
