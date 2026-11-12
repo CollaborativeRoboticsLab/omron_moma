@@ -82,7 +82,7 @@ def generate_launch_description():
         name='rviz2',
         output='log',
         emulate_tty=True,
-        arguments=['-d', moveit_rviz_config],
+        arguments=['-d', moveit_rviz_config, '--ros-args', '--log-level', 'warn'],
         condition=IfCondition(use_moveit),
         parameters=[
             robot_description,
